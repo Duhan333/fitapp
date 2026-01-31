@@ -56,6 +56,9 @@
         .del-btn { color: #D1D5DB; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
         .tool-bar { display: flex; gap: 8px; margin-top: 20px; }
         .btn-tool { background: #fff; color: #666; border: 1px solid #ddd; font-size: 0.75rem; padding: 8px; border-radius: 8px; flex: 1; cursor: pointer; }
+
+        /* 运动热量输入框特有样式 */
+        .sport-cal-input { border: 2px solid var(--accent) !important; color: var(--accent); font-weight: 800; text-align: center; background: #fff !important; }
     </style>
 </head>
 <body>
@@ -132,7 +135,12 @@
             <option value="lift">🏋️ 力量训练 (时长)</option>
         </select>
         <div id="sportInputs"></div>
-        <div id="sportPreview" style="text-align:center; color:#059669; font-weight:700; margin:10px 0;">预览赚取: 0 kcal</div>
+        
+        <div style="margin:15px 0;">
+            <label style="font-size:0.75rem; color:var(--accent); display:block; text-align:center; margin-bottom:5px;">🔥 预估消耗 (可根据手表修改)</label>
+            <input type="number" id="sportFinalCal" class="sport-cal-input" placeholder="0">
+        </div>
+
         <button class="btn btn-sport" onclick="addRecord('sport')">确认运动</button>
     </div>
 
@@ -192,7 +200,7 @@
         document.getElementById('height').value = appData.user.h;
         document.getElementById('age').value = appData.user.a;
         document.getElementById('gender').value = appData.user.g;
-        updateTime(); setInterval(updateTime, 1000); setInterval(calcSportPreview, 1000);
+        updateTime(); setInterval(updateTime, 1000);
         checkNewDay(); refreshFoodList(); toggleSportInputs(); renderUI();
     };
 
@@ -202,7 +210,6 @@
         document.getElementById('dateStr').innerText = now.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'short'});
     }
 
-    // --- 活跃度计算 (基于真实日期) ---
     function getAutoActivityFactor() {
         const today = new Date(); today.setHours(0,0,0,0);
         let activeDays = 0;
@@ -220,7 +227,6 @@
         return map[activeDays];
     }
 
-    // --- 饮食记录核心 (完全回归 V6.5) ---
     function refreshFoodList() {
         const select = document.getElementById('foodSelect');
         select.innerHTML = '';
@@ -231,7 +237,6 @@
         foodDB_static.forEach((f, i) => {
             select.add(new Option(`${f.name} (${f.cal}k/${f.unit==='g'?'100g':f.unit})`, `static_${i}`));
         });
-
         const managerList = document.getElementById('customFoodList');
         managerList.innerHTML = appData.customFoods.length === 0 ? '<p style="font-size:0.7rem; color:#ccc;">暂无常用食物</p>' : '';
         appData.customFoods.forEach((f, i) => {
@@ -247,10 +252,8 @@
         document.getElementById('customNameInput').style.display = isCustom ? 'grid' : 'none';
         const calInput = document.getElementById('foodCal');
         const unitSelect = document.getElementById('foodUnit');
-        
-        if (isCustom) {
-            calInput.readOnly = false; calInput.value = '';
-        } else if (val.startsWith('user_')) {
+        if (isCustom) { calInput.readOnly = false; calInput.value = ''; }
+        else if (val.startsWith('user_')) {
             const f = appData.customFoods[val.split('_')[1]];
             calInput.value = f.cal; unitSelect.value = f.unit; calInput.readOnly = false;
         } else {
@@ -271,9 +274,8 @@
     function toggleFoodManager() {
         const p = document.getElementById('foodManagerPanel');
         const btn = document.getElementById('btnManageToggle');
-        const isOpen = p.style.display === 'block';
-        p.style.display = isOpen ? 'none' : 'block';
-        btn.innerText = isOpen ? '管理列表' : '退出管理';
+        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        btn.innerText = p.style.display === 'block' ? '退出管理' : '管理列表';
     }
 
     function deleteCustomFood(i) {
@@ -282,7 +284,6 @@
         }
     }
 
-    // --- 日历渲染 ---
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
         const year = viewDate.getFullYear(), month = viewDate.getMonth();
@@ -318,15 +319,13 @@
         document.getElementById('calendarGrid').appendChild(div);
     }
 
-    // --- 核心录入 ---
     function addRecord(type) {
-        let name, val, unit;
+        let name, val;
         if (type === 'food') {
             const selectVal = document.getElementById('foodSelect').value;
             val = parseFloat(document.getElementById('foodCal').value);
-            unit = document.getElementById('foodUnit').value;
+            const unit = document.getElementById('foodUnit').value;
             if (!val) return alert("请输入热量");
-            
             if (selectVal === 'custom') {
                 name = document.getElementById('foodNameCustom').value.trim() || "未命名饮食";
                 if (confirm(`是否将 "${name}" (单位:${unit}) 永久存入你的常用列表？`)) {
@@ -339,33 +338,36 @@
                 name = selectVal.startsWith('user_') ? appData.customFoods[selectVal.split('_')[1]].name : foodDB_static[selectVal.split('_')[1]].name;
             }
         } else {
-            val = calcSportPreview();
+            // 读取手动修改后的最终热量值
+            val = parseFloat(document.getElementById('sportFinalCal').value) || 0;
             name = document.getElementById('sportType').options[document.getElementById('sportType').selectedIndex].text.split(' ')[1];
+            if (val <= 0) return alert("热量必须大于0");
         }
         appData.logs.push({type, name, val}); saveData();
         if(type==='food') { document.getElementById('foodAmount').value = ''; document.getElementById('foodNameCustom').value = ''; }
     }
 
-    // --- 运动逻辑 ---
     function toggleSportInputs() {
         const type = document.getElementById('sportType').value;
         const container = document.getElementById('sportInputs');
-        if(type==='incline') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="4"><input type="number" id="s_g" value="12"><input type="number" id="s_d" value="30"></div>`;
-        else if(type==='run') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="8"><input type="number" id="s_d" value="30"><div></div></div>`;
-        else container.innerHTML = `<input type="number" id="s_d" value="45">`;
+        const listener = "oninput='updateSportCalc()'";
+        if(type==='incline') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="4" ${listener}><input type="number" id="s_g" value="12" ${listener}><input type="number" id="s_d" value="30" ${listener}></div>`;
+        else if(type==='run') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="8" ${listener}><input type="number" id="s_d" value="30" ${listener}><div></div></div>`;
+        else container.innerHTML = `<input type="number" id="s_d" value="45" ${listener}>`;
+        updateSportCalc();
     }
-    function calcSportPreview() {
+
+    function updateSportCalc() {
         const type=document.getElementById('sportType').value, w=appData.user.w;
         let b=0;
         if(type==='incline'){
             const v=document.getElementById('s_v').value||0, g=document.getElementById('s_g').value||0, d=document.getElementById('s_d').value||0;
             b = (((0.1*v*16.66)+(1.8*v*16.66*g/100)+3.5)*w*d)/200;
         } else { b = (type==='run'?8:4) * w * ((document.getElementById('s_d').value||0)/60); }
-        document.getElementById('sportPreview').innerText = `预览赚取: ${Math.round(b)} kcal`;
-        return Math.round(b);
+        // 自动填入系统计算值
+        document.getElementById('sportFinalCal').value = Math.round(b);
     }
 
-    // --- 基础逻辑 ---
     function renderUI() {
         const factor = getAutoActivityFactor();
         let bmr = (10 * appData.user.w) + (6.25 * appData.user.h) - (5 * appData.user.a) + (appData.user.g === 'male' ? 5 : -161);
