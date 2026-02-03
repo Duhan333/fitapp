@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FIT · 减脂成就版 V6.5-Hybrid</title>
+    <title>FIT · 减脂成就版 V6.6</title>
     <style>
         :root {
             --primary: #4F46E5; --accent: #10B981; --danger: #EF4444; 
@@ -21,14 +21,12 @@
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: 0 8px 20px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
-        /* 顶部看板 */
         .dashboard-main { text-align: center; }
         .dash-value { font-size: 3.5rem; font-weight: 800; margin: 5px 0; letter-spacing: -2px; }
         .status-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; background: #EEF2FF; color: var(--primary); font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; border: 1px solid #E0E7FF; }
         .progress-bar-bg { background: #F3F4F6; height: 12px; border-radius: 10px; margin-top: 15px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.6s; }
 
-        /* 日历样式 */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .weekday { font-size: 0.65rem; color: var(--text-sub); text-align: center; padding-bottom: 5px; }
@@ -36,14 +34,12 @@
         .day.other-month { opacity: 0.2; background: #f9fafb; }
         .day.today { border: 2.5px solid var(--primary); font-weight: 900; }
         .day-fire { position: absolute; top: 1px; right: 1px; font-size: 0.6rem; }
-        .day-val { font-size: 0.5rem; margin-top: 2px; transform: scale(0.8); color: #666; }
+        .day-val { font-size: 0.5rem; margin-top: 2px; transform: scale(0.8); color: #666; font-weight: bold; }
 
-        /* 饮食管理回归样式 */
         .food-manage-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
         .btn-manage { padding: 8px; font-size: 0.75rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; white-space: nowrap; }
         .food-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f9fafb; border-radius: 10px; margin-bottom: 5px; font-size: 0.9rem; }
 
-        /* 录入与按钮 */
         input, select { width: 100%; padding: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; border-radius: 12px; font-size: 1rem; box-sizing: border-box; }
         .input-group { margin-bottom: 12px; display: grid; gap: 10px; }
         .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -56,8 +52,7 @@
         .del-btn { color: #D1D5DB; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
         .tool-bar { display: flex; gap: 8px; margin-top: 20px; }
         .btn-tool { background: #fff; color: #666; border: 1px solid #ddd; font-size: 0.75rem; padding: 8px; border-radius: 8px; flex: 1; cursor: pointer; }
-
-        /* 运动热量输入框特有样式 */
+        /* 补回高亮运动输入框样式 */
         .sport-cal-input { border: 2px solid var(--accent) !important; color: var(--accent); font-weight: 800; text-align: center; background: #fff !important; }
     </style>
 </head>
@@ -71,7 +66,7 @@
 
     <div class="card">
         <div class="dashboard-main">
-            <div id="autoStatus" class="status-tag">分析中...</div>
+            <div id="activityStatus" class="status-tag">手动系数模式</div>
             <div id="uiRemain" class="dash-value" style="color:var(--accent)">0</div>
             <div style="font-size:0.9rem; color:var(--text-sub); font-weight:bold;">今日创造缺口 (kcal)</div>
         </div>
@@ -87,42 +82,28 @@
     </div>
 
     <div class="card">
-        <div class="card-header"><div class="card-title" style="font-weight:700; margin-bottom:10px;">🍔 饮食记录</div></div>
-        
+        <div style="font-weight:700; margin-bottom:10px;">🍔 饮食记录</div>
         <div class="food-manage-row">
             <select id="foodSelect" onchange="updateFoodInput()"></select>
             <button class="btn-manage" id="btnManageToggle" onclick="toggleFoodManager()">管理列表</button>
         </div>
-
         <div id="foodManagerPanel" style="display:none; margin-bottom:15px; max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 12px;">
-            <p style="font-size:0.7rem; color:var(--text-sub); margin-top:0;">点击 × 删除常用食物记录：</p>
             <div id="customFoodList"></div>
         </div>
-
-        <div id="customNameInput" class="input-group">
-            <input type="text" id="foodNameCustom" placeholder="新食物名称 (如: 巨无霸)">
-        </div>
-        
+        <div id="customNameInput" class="input-group"><input type="text" id="foodNameCustom" placeholder="新食物名称"></div>
         <div class="input-group grid-food-inputs">
-            <div>
-                <label style="font-size:0.75rem">数量</label>
-                <input type="number" id="foodAmount" placeholder="0" oninput="calcFoodPreview()">
-            </div>
+            <div><label style="font-size:0.75rem">数量</label><input type="number" id="foodAmount" oninput="calcFoodPreview()"></div>
             <div>
                 <label style="font-size:0.75rem">单位</label>
                 <select id="foodUnit" onchange="calcFoodPreview()">
                     <option value="g">克(g)</option>
                     <option value="个">个</option>
+                    <option value="碗">碗</option>
                     <option value="份">份</option>
                     <option value="ml">毫升(ml)</option>
-                    <option value="碗">碗</option>
-                    <option value="块">块</option>
                 </select>
             </div>
-            <div>
-                <label style="font-size:0.75rem">总热量</label>
-                <input type="number" id="foodCal" placeholder="0">
-            </div>
+            <div><label style="font-size:0.75rem">总热量</label><input type="number" id="foodCal"></div>
         </div>
         <button class="btn btn-food" onclick="addRecord('food')">确认记录饮食</button>
     </div>
@@ -131,16 +112,14 @@
         <div style="font-weight:700; margin-bottom:10px;">🏃 运动记录</div>
         <select id="sportType" onchange="toggleSportInputs()" style="margin-bottom:10px;">
             <option value="incline">🧗 跑步机爬坡 (12-4-30)</option>
-            <option value="run">💨 跑步 (时速/时长)</option>
+            <option value="run">💨 跑步 (时长)</option>
             <option value="lift">🏋️ 力量训练 (时长)</option>
         </select>
         <div id="sportInputs"></div>
-        
         <div style="margin:15px 0;">
-            <label style="font-size:0.75rem; color:var(--accent); display:block; text-align:center; margin-bottom:5px;">🔥 预估消耗 (可根据手表修改)</label>
-            <input type="number" id="sportFinalCal" class="sport-cal-input" placeholder="0">
+            <label style="font-size:0.75rem; color:var(--accent); display:block; text-align:center; margin-bottom:5px;">🔥 预估消耗 (根据手表修改)</label>
+            <input type="number" id="sportFinalCal" class="sport-cal-input">
         </div>
-
         <button class="btn btn-sport" onclick="addRecord('sport')">确认运动</button>
     </div>
 
@@ -159,47 +138,56 @@
     </div>
 
     <div class="card">
-        <div onclick="toggleSection('settingsPanel')" style="cursor:pointer; text-align:center; color:var(--text-sub); font-size:0.8rem;">⚙️ 修改个人参数</div>
+        <div onclick="toggleSection('settingsPanel')" style="cursor:pointer; text-align:center; color:var(--text-sub); font-size:0.8rem;">⚙️ 修改个人参数 & 活跃系数</div>
         <div id="settingsPanel" style="display:none; margin-top:15px;">
             <div class="input-group grid-3">
                 <input type="number" id="weight" placeholder="kg">
                 <input type="number" id="height" placeholder="cm">
                 <input type="number" id="age" placeholder="岁">
             </div>
-            <select id="gender" style="margin-top:10px;"><option value="male">男</option><option value="female">女</option></select>
-            <button class="btn" style="background:var(--primary); color:white; margin-top:10px;" onclick="saveSettings()">保存修改</button>
+            <select id="gender" style="margin-bottom:10px;"><option value="male">男</option><option value="female">女</option></select>
+            <label style="font-size:0.75rem; color:var(--primary); font-weight:bold;">生活活跃系数:</label>
+            <select id="userFactor" style="margin-top:5px;">
+                <option value="1.2">1.2 - 久坐/假期 </option>
+                <option value="1.3">1.3 - 轻微走动 </option>
+                <option value="1.35">1.35 - 活跃模式 </option> <option value="1.375">1.375 - 频繁活动</option>
+                <option value="1.55">1.55 - 极度活跃</option>
+            </select>
+            <button class="btn" style="background:var(--primary); color:white; margin-top:15px;" onclick="saveSettings()">保存设置</button>
         </div>
     </div>
 
     <div class="tool-bar">
-        <button class="btn-tool" onclick="exportData()">💾 导出JSON</button>
-        <button class="btn-tool" onclick="importData()">📂 导入JSON</button>
-        <button class="btn-tool" onclick="if(confirm('清空所有？')){localStorage.clear();location.reload();}">🧹 重置</button>
+        <button class="btn-tool" onclick="exportData()">💾 导出</button>
+        <button class="btn-tool" onclick="importData()">📂 导入</button>
+        <button class="btn-tool" onclick="if(confirm('清空？')){localStorage.clear();location.reload();}">🧹 重置</button>
     </div>
 </div>
 
 <script>
     const foodDB_static = [
-        {name: "米饭", cal: 116, unit: "g"}, {name: "鸡蛋", cal: 75, unit: "个"},
-        {name: "鸡胸肉", cal: 118, unit: "g"}, {name: "牛肉", cal: 150, unit: "g"},
-        {name: "全麦面包", cal: 246, unit: "g"}, {name: "香蕉", cal: 93, unit: "个"}
+        {name: "米饭", cal: 116, unit: "g"}, 
+        {name: "鸡蛋", cal: 75, unit: "个"},
+        {name: "蛋炒饭", cal: 273, unit: "g"},
+        {name: "牛肉", cal: 250, unit: "g"},
+        {name: "牛奶", cal: 60, unit: "ml"}
     ];
-
     const STORAGE_KEY = 'fitApp_master';
     let appData = { 
-        user: { w: 95, h: 178, a: 25, g: 'male' }, 
-        customFoods: [], 
-        logs: [], history: [], currentDate: "", goal: 2400 
+        user: { w: 95, h: 178, a: 25, g: 'male', factor: 1.2 }, 
+        customFoods: [], logs: [], history: [], currentDate: "", goal: 2000 
     };
     let viewDate = new Date();
 
     window.onload = function() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) appData = JSON.parse(saved);
+        if (!appData.user.factor) appData.user.factor = 1.2;
         document.getElementById('weight').value = appData.user.w;
         document.getElementById('height').value = appData.user.h;
         document.getElementById('age').value = appData.user.a;
         document.getElementById('gender').value = appData.user.g;
+        document.getElementById('userFactor').value = appData.user.factor;
         updateTime(); setInterval(updateTime, 1000);
         checkNewDay(); refreshFoodList(); toggleSportInputs(); renderUI();
     };
@@ -210,38 +198,25 @@
         document.getElementById('dateStr').innerText = now.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'short'});
     }
 
-    function getAutoActivityFactor() {
-        const today = new Date(); today.setHours(0,0,0,0);
-        let activeDays = 0;
-        for(let i = 0; i < 7; i++) {
-            const target = new Date(today); target.setDate(today.getDate() - i);
-            const dStr = target.toDateString();
-            const hist = appData.history.find(h => h.date === dStr && h.hasSport);
-            const isTodaySport = (dStr === today.toDateString() && appData.logs.some(l => l.type === 'sport'));
-            if (hist || isTodaySport) activeDays++;
-        }
-        const tag = document.getElementById('autoStatus');
-        const map = {0:1.2, 1:1.375, 2:1.375, 3:1.55, 4:1.55, 5:1.725, 6:1.725, 7:1.725};
-        const labels = {1.2:"久坐模式", 1.375:"轻度活跃", 1.55:"中度活跃", 1.725:"极度活跃"};
-        tag.innerText = `${labels[map[activeDays]] || "久坐模式"} (${activeDays}天/周)`;
-        return map[activeDays];
-    }
-
     function refreshFoodList() {
         const select = document.getElementById('foodSelect');
-        select.innerHTML = '';
-        select.add(new Option("✍️ 输入新食物...", "custom"));
+        select.innerHTML = '<option value="custom">✍️ 输入新食物...</option>';
+        
+        // 补回热量显示 (XXk/单位)
         appData.customFoods.forEach((f, i) => {
-            select.add(new Option(`⭐ ${f.name} (${f.cal}k/${f.unit})`, `user_${i}`));
+            const u = f.unit === 'g' ? '100g' : f.unit;
+            select.add(new Option(`⭐ ${f.name} (${f.cal}k/${u})`, `user_${i}`));
         });
         foodDB_static.forEach((f, i) => {
-            select.add(new Option(`${f.name} (${f.cal}k/${f.unit==='g'?'100g':f.unit})`, `static_${i}`));
+            const u = f.unit === 'g' ? '100g' : f.unit;
+            select.add(new Option(`${f.name} (${f.cal}k/${u})`, `static_${i}`));
         });
+
         const managerList = document.getElementById('customFoodList');
-        managerList.innerHTML = appData.customFoods.length === 0 ? '<p style="font-size:0.7rem; color:#ccc;">暂无常用食物</p>' : '';
+        managerList.innerHTML = '';
         appData.customFoods.forEach((f, i) => {
-            managerList.innerHTML += `<div class="food-list-item"><span>${f.name} (${f.cal}k/${f.unit})</span>
-                                     <span class="del-btn" onclick="deleteCustomFood(${i})">×</span></div>`;
+            const u = f.unit === 'g' ? '100g' : f.unit;
+            managerList.innerHTML += `<div class="food-list-item">${f.name} (${f.cal}k/${u}) <span class="del-btn" onclick="deleteCustomFood(${i})">×</span></div>`;
         });
         updateFoodInput();
     }
@@ -250,38 +225,48 @@
         const val = document.getElementById('foodSelect').value;
         const isCustom = val === 'custom';
         document.getElementById('customNameInput').style.display = isCustom ? 'grid' : 'none';
-        const calInput = document.getElementById('foodCal');
         const unitSelect = document.getElementById('foodUnit');
-        if (isCustom) { calInput.readOnly = false; calInput.value = ''; }
-        else if (val.startsWith('user_')) {
-            const f = appData.customFoods[val.split('_')[1]];
-            calInput.value = f.cal; unitSelect.value = f.unit; calInput.readOnly = false;
-        } else {
-            const f = foodDB_static[val.split('_')[1]];
-            unitSelect.value = f.unit; calInput.readOnly = true; calcFoodPreview();
+        if (!isCustom) {
+            const f = val.startsWith('user_') ? appData.customFoods[val.split('_')[1]] : foodDB_static[val.split('_')[1]];
+            unitSelect.value = f.unit;
+            calcFoodPreview();
         }
     }
 
     function calcFoodPreview() {
         const val = document.getElementById('foodSelect').value;
         const amount = parseFloat(document.getElementById('foodAmount').value) || 0;
-        const unit = document.getElementById('foodUnit').value;
         if (val === 'custom') return;
-        let baseCal = val.startsWith('user_') ? appData.customFoods[val.split('_')[1]].cal : foodDB_static[val.split('_')[1]].cal;
-        document.getElementById('foodCal').value = Math.round(unit === 'g' ? (baseCal / 100) * amount : baseCal * amount);
+        let f = val.startsWith('user_') ? appData.customFoods[val.split('_')[1]] : foodDB_static[val.split('_')[1]];
+        // 克(g)按100g单价，其余按单件计费
+        let result = (f.unit === 'g') ? (f.cal / 100 * amount) : (f.cal * amount);
+        document.getElementById('foodCal').value = Math.round(result);
     }
 
-    function toggleFoodManager() {
-        const p = document.getElementById('foodManagerPanel');
-        const btn = document.getElementById('btnManageToggle');
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
-        btn.innerText = p.style.display === 'block' ? '退出管理' : '管理列表';
-    }
-
-    function deleteCustomFood(i) {
-        if (confirm(`确定删除 "${appData.customFoods[i].name}" 吗？`)) {
-            appData.customFoods.splice(i, 1); saveData(); refreshFoodList();
-        }
+    function renderUI() {
+        const f = parseFloat(appData.user.factor);
+        let bmr = (10 * appData.user.w) + (6.25 * appData.user.h) - (5 * appData.user.a) + (appData.user.g === 'male' ? 5 : -161);
+        appData.goal = Math.round(bmr * f);
+        document.getElementById('activityStatus').innerText = `当前系数: ${f}`;
+        document.getElementById('uiBmr').innerText = Math.round(bmr);
+        document.getElementById('uiGoal').innerText = appData.goal;
+        
+        let eaten=getLogsSum('food'), burned=getLogsSum('sport');
+        const logList = document.getElementById('logList'); logList.innerHTML = '';
+        appData.logs.forEach((l, i) => {
+            logList.innerHTML += `<li class="record-item"><span>${l.type==='food'?'🍔':'🏃'} ${l.name}</span>
+                <span><b style="color:${l.type==='food'?'var(--danger)':'var(--accent)'}">${l.type==='food'?'+':'-'}${l.val}</b>
+                <span class="del-btn" onclick="deleteLog(${i})">×</span></span></li>`;
+        });
+        
+        const rem = appData.goal - eaten + burned;
+        const uiRem = document.getElementById('uiRemain');
+        uiRem.innerText = (rem>0?"+":"")+rem; 
+        uiRem.style.color = rem>0?'var(--accent)':'var(--danger)';
+        document.getElementById('uiEaten').innerText = eaten;
+        document.getElementById('uiBurned').innerText = burned;
+        document.getElementById('progressBar').style.width = Math.min((eaten/(appData.goal+burned))*100, 100)+'%';
+        renderCalendar();
     }
 
     function renderCalendar() {
@@ -291,32 +276,40 @@
         ['日','一','二','三','四','五','六'].forEach(w => grid.innerHTML += `<div class="weekday">${w}</div>`);
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const prevMonthDays = new Date(year, month, 0).getDate();
-        for (let i = firstDay - 1; i >= 0; i--) createDayNode(prevMonthDays - i, true);
+        for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="day other-month"></div>';
         for (let i = 1; i <= daysInMonth; i++) {
             const dStr = new Date(year, month, i).toDateString();
             const hist = appData.history.find(h => h.date === dStr);
             const isToday = dStr === new Date().toDateString();
-            let rem = hist ? hist.remain : null;
-            let hasS = hist ? hist.hasSport : false;
-            if (isToday) {
-                let e=0, b=0; appData.logs.forEach(l=>{if(l.type==='food')e+=l.val; else b+=l.val;});
-                if(e>0||b>0) { rem = appData.goal - e + b; hasS = hasS || appData.logs.some(l=>l.type==='sport'); }
+            
+            // 改进点：如果没有历史记录，且今天没记东西，则不显示热量和绿色块
+            let rem = null, hasS = false;
+            if (hist) {
+                rem = hist.remain; hasS = hist.hasSport;
+            } else if (isToday && (getLogsSum('food') > 0 || getLogsSum('sport') > 0)) {
+                rem = appData.goal - getLogsSum('food') + getLogsSum('sport');
+                hasS = appData.logs.some(l=>l.type==='sport');
             }
-            createDayNode(i, false, isToday, rem, hasS);
+
+            const div = document.createElement('div');
+            div.className = `day ${isToday ? 'today' : ''}`;
+            if (rem !== null) {
+                div.style.backgroundColor = `rgba(16, 185, 129, ${Math.min(Math.abs(rem) / 1200, 0.7) + 0.1})`;
+            }
+            div.innerHTML = `<span>${i}</span>${hasS?'<span class="day-fire">🔥</span>':''}${rem!==null?`<span class="day-val">${Math.round(rem)}</span>`:''}`;
+            grid.appendChild(div);
         }
-        const remaining = (7 - ((firstDay + daysInMonth) % 7)) % 7;
-        for (let i = 1; i <= remaining; i++) createDayNode(i, true);
     }
 
-    function createDayNode(num, isOther, isToday, remain, hasSport) {
-        const div = document.createElement('div');
-        div.className = `day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
-        if (!isOther && remain !== null && remain > 0) div.style.backgroundColor = `rgba(16, 185, 129, ${Math.min(remain / 1200, 0.7) + 0.1})`;
-        div.innerHTML = `<span>${num}</span>`;
-        if (hasSport) div.innerHTML += `<span class="day-fire">🔥</span>`;
-        if (!isOther && remain !== null) div.innerHTML += `<span class="day-val">${Math.round(remain)}</span>`;
-        document.getElementById('calendarGrid').appendChild(div);
+    function checkNewDay() {
+        const today = new Date().toDateString();
+        if (appData.currentDate && appData.currentDate !== today) {
+            let e=getLogsSum('food'), b=getLogsSum('sport');
+            // 只存档有数据的日子，没数据的日子不进历史库，保持日历洁净
+            if(e>0||b>0) appData.history.unshift({date:appData.currentDate, remain:(appData.goal-e+b), hasSport:appData.logs.some(l=>l.type==='sport')});
+            appData.logs = [];
+        }
+        appData.currentDate = today; saveData();
     }
 
     function addRecord(type) {
@@ -324,27 +317,21 @@
         if (type === 'food') {
             const selectVal = document.getElementById('foodSelect').value;
             val = parseFloat(document.getElementById('foodCal').value);
-            const unit = document.getElementById('foodUnit').value;
-            if (!val) return alert("请输入热量");
+            if (!val) return;
             if (selectVal === 'custom') {
-                name = document.getElementById('foodNameCustom').value.trim() || "未命名饮食";
-                if (confirm(`是否将 "${name}" (单位:${unit}) 永久存入你的常用列表？`)) {
-                    let amt = parseFloat(document.getElementById('foodAmount').value) || 1;
-                    let calToSave = (unit === 'g') ? (val / amt * 100) : (val / amt);
-                    appData.customFoods.unshift({name, cal: Math.round(calToSave), unit});
+                name = document.getElementById('foodNameCustom').value.trim() || "新食物";
+                if (confirm(`保存为常用？`)) {
+                    appData.customFoods.unshift({name, cal: val, unit: document.getElementById('foodUnit').value});
                     refreshFoodList();
                 }
             } else {
                 name = selectVal.startsWith('user_') ? appData.customFoods[selectVal.split('_')[1]].name : foodDB_static[selectVal.split('_')[1]].name;
             }
         } else {
-            // 读取手动修改后的最终热量值
             val = parseFloat(document.getElementById('sportFinalCal').value) || 0;
             name = document.getElementById('sportType').options[document.getElementById('sportType').selectedIndex].text.split(' ')[1];
-            if (val <= 0) return alert("热量必须大于0");
         }
         appData.logs.push({type, name, val}); saveData();
-        if(type==='food') { document.getElementById('foodAmount').value = ''; document.getElementById('foodNameCustom').value = ''; }
     }
 
     function toggleSportInputs() {
@@ -352,66 +339,37 @@
         const container = document.getElementById('sportInputs');
         const listener = "oninput='updateSportCalc()'";
         if(type==='incline') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="4" ${listener}><input type="number" id="s_g" value="12" ${listener}><input type="number" id="s_d" value="30" ${listener}></div>`;
-        else if(type==='run') container.innerHTML = `<div class="input-group grid-3"><input type="number" id="s_v" value="8" ${listener}><input type="number" id="s_d" value="30" ${listener}><div></div></div>`;
-        else container.innerHTML = `<input type="number" id="s_d" value="45" ${listener}>`;
+        else container.innerHTML = `<input type="number" id="s_d" value="30" ${listener}>`;
         updateSportCalc();
     }
 
     function updateSportCalc() {
         const type=document.getElementById('sportType').value, w=appData.user.w;
-        let b=0;
+        let b=0, d=parseFloat(document.getElementById('s_d').value)||0;
         if(type==='incline'){
-            const v=document.getElementById('s_v').value||0, g=document.getElementById('s_g').value||0, d=document.getElementById('s_d').value||0;
+            const v=parseFloat(document.getElementById('s_v').value)||0, g=parseFloat(document.getElementById('s_g').value)||0;
             b = (((0.1*v*16.66)+(1.8*v*16.66*g/100)+3.5)*w*d)/200;
-        } else { b = (type==='run'?8:4) * w * ((document.getElementById('s_d').value||0)/60); }
-        // 自动填入系统计算值
+        } else { b = (type==='run'?8:4) * w * (d/60); }
         document.getElementById('sportFinalCal').value = Math.round(b);
     }
 
-    function renderUI() {
-        const factor = getAutoActivityFactor();
-        let bmr = (10 * appData.user.w) + (6.25 * appData.user.h) - (5 * appData.user.a) + (appData.user.g === 'male' ? 5 : -161);
-        appData.goal = Math.round(bmr * factor);
-        document.getElementById('uiBmr').innerText = Math.round(bmr);
-        document.getElementById('uiGoal').innerText = appData.goal;
-        let eaten=0, burned=0;
-        const logList = document.getElementById('logList'); logList.innerHTML = '';
-        appData.logs.forEach((l, i) => {
-            if(l.type==='food') eaten += l.val; else burned += l.val;
-            logList.innerHTML += `<li class="record-item"><span>${l.type==='food'?'🍔':'🏃'} ${l.name}</span>
-                <span><b style="color:${l.type==='food'?'var(--danger)':'var(--accent)'}">${l.type==='food'?'+':'-'}${l.val}</b>
-                <span class="del-btn" onclick="deleteLog(${i})">×</span></span></li>`;
-        });
-        const rem = appData.goal - eaten + burned;
-        const uiRem = document.getElementById('uiRemain');
-        uiRem.innerText = (rem>0?"+":"")+rem; uiRem.style.color = rem>0?'var(--accent)':'var(--danger)';
-        document.getElementById('uiEaten').innerText = eaten;
-        document.getElementById('uiBurned').innerText = burned;
-        document.getElementById('progressBar').style.width = Math.min((eaten/(appData.goal+burned))*100, 100)+'%';
-        renderCalendar();
-    }
-    function checkNewDay() {
-        const today = new Date().toDateString();
-        if (appData.currentDate && appData.currentDate !== today) {
-            let e=0, b=0; appData.logs.forEach(l=>{if(l.type==='food')e+=l.val; else b+=l.val;});
-            if(e>0||b>0) appData.history.unshift({date:appData.currentDate, remain:(appData.goal-e+b), hasSport:appData.logs.some(l=>l.type==='sport')});
-            appData.logs = [];
-        }
-        appData.currentDate = today; saveData();
-    }
+    function getLogsSum(type) { return appData.logs.filter(l=>l.type===type).reduce((s,l)=>s+l.val,0); }
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); renderUI(); }
     function deleteLog(i) { appData.logs.splice(i,1); saveData(); }
     function toggleSection(id) { const el=document.getElementById(id); el.style.display=el.style.display==='block'?'none':'block'; }
     function changeMonth(d) { viewDate.setMonth(viewDate.getMonth()+d); renderCalendar(); }
+    function exportData() { prompt("复制", JSON.stringify(appData)); }
+    function importData() { const d=prompt("粘贴"); if(d){ appData=JSON.parse(d); saveData(); location.reload(); } }
+    function deleteCustomFood(i) { appData.customFoods.splice(i,1); saveData(); refreshFoodList(); }
+    function toggleFoodManager() { const p=document.getElementById('foodManagerPanel'); p.style.display=p.style.display==='block'?'none':'block'; }
     function saveSettings() {
         appData.user.w = parseFloat(document.getElementById('weight').value);
         appData.user.h = parseFloat(document.getElementById('height').value);
         appData.user.a = parseFloat(document.getElementById('age').value);
         appData.user.g = document.getElementById('gender').value;
+        appData.user.factor = document.getElementById('userFactor').value;
         saveData(); toggleSection('settingsPanel');
     }
-    function exportData() { prompt("复制以下数据", JSON.stringify(appData)); }
-    function importData() { const d=prompt("粘贴JSON数据"); if(d){ appData=JSON.parse(d); saveData(); location.reload(); } }
 </script>
 </body>
 </html>
